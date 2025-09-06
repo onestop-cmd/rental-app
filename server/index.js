@@ -7,6 +7,9 @@ const connectDB = require('./config/db');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// TEMPORARY: Seed all demo data
+app.use('/api/seed', require('./routes/seedAll'));
+
 // Connect to MongoDB
 connectDB();
 
