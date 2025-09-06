@@ -5,6 +5,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: path.resolve(__dirname, '../server/public'), // send build directly to backend
+    outDir: path.resolve(__dirname, '../server/public'), // <- Build here
   },
 });
