@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: '../server/public', // ensure frontend build goes into backend
-  }
+    outDir: path.resolve(__dirname, '../server/public'), // send build directly to backend
+  },
 });
