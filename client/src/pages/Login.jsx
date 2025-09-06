@@ -26,11 +26,9 @@ export default function Login() {
         return;
       }
 
-      // Save token + user
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Go to dashboard
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
@@ -70,4 +68,8 @@ export default function Login() {
           required
         />
         <button type="submit">Login</button>
-        {error && <p style={{ color:
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+      </form>
+    </div>
+  );
+}
