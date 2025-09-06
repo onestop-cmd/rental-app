@@ -12,10 +12,15 @@ const BankDeposit = require('../models/BankDeposit');
 router.get('/all', async (req, res) => {
   try {
     // --- Users ---
-    const adminEmail = 'admin@salim.pm';
-    if (!(await User.findOne({ email: adminEmail }))) {
+    let adminUser = await User.findOne({ email: 'admin@salim.pm' });
+    if (!adminUser) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
-      await User.create({ name: 'Admin User', email: adminEmail, password: hashedPassword, role: 'admin' });
+      adminUser = await User.create({
+        name: 'Admin User',
+        email: 'admin@salim.pm',
+        password: hashedPassword,
+        role: 'admin'
+      });
     }
 
     const regularUsers = [
@@ -25,7 +30,8 @@ router.get('/all', async (req, res) => {
     ];
 
     for (const u of regularUsers) {
-      if (!(await User.findOne({ email: u.email }))) {
+      let user = await User.findOne({ email: u.email });
+      if (!user) {
         const hashedPassword = await bcrypt.hash(u.password, 10);
         await User.create({ name: u.name, email: u.email, password: hashedPassword, role: u.role });
       }
@@ -40,9 +46,7 @@ router.get('/all', async (req, res) => {
     const createdProperties = [];
     for (const p of demoProperties) {
       let prop = await Property.findOne({ buildingNumber: p.buildingNumber, unitNumber: p.unitNumber });
-      if (!prop) {
-        prop = await Property.create(p);
-      }
+      if (!prop) prop = await Property.create(p);
       createdProperties.push(prop);
     }
 
@@ -75,7 +79,12 @@ router.get('/all', async (req, res) => {
     // --- Expenses ---
     for (const property of createdProperties) {
       if (!(await Expense.findOne({ property: property._id }))) {
-        await Expense.create({ description: 'Maintenance', amount: 100, property: property._id, createdBy: adminEmail });
+        await Expense.create({
+          description: 'Maintenance',
+          amount: 100,
+          property: property._id,
+          createdBy: adminUser._id // ✅ use ObjectId
+        });
       }
     }
 
@@ -84,7 +93,7 @@ router.get('/all', async (req, res) => {
       if (!(await BankDeposit.findOne({ property: property._id }))) {
         await BankDeposit.create({
           property: property._id,
-          depositedBy: adminEmail,
+          depositedBy: adminUser._id, // ✅ use ObjectId
           depositDate: new Date(),
           depositMonth: month,
           amount: 1000,
