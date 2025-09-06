@@ -27,10 +27,11 @@ app.use('/api/bank-deposits', require('./routes/bankDeposits'));
 app.use('/api/reconciliation', require('./routes/reconciliation'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
-// Serve frontend build from server/public
-const clientBuildPath = path.join(__dirname, 'public');
+// Serve frontend build from client/dist
+const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientBuildPath));
 
+// Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
