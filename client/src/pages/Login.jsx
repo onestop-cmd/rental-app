@@ -1,23 +1,60 @@
-import React, { useState } from 'react';
-import api from '../api';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-export default function Login(){
-  const [email,setEmail]=useState('admin@salim.pm'); const [password,setPassword]=useState('admin123');
-  const nav = useNavigate();
-  const submit = async e => {
+import { API_URL } from '../utils/api';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api.post('/api/auth/login',{ email, password });
-    localStorage.setItem('token', res.data.token);
-    nav('/');
-  }
+    setError('');
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+      setError('An error occurred. Please try again.');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <form onSubmit={submit} className="bg-white p-6 rounded shadow w-96">
-        <h3 className="text-lg font-bold mb-4">Login</h3>
-        <input className="w-full mb-2 p-2 border" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email" />
-        <input className="w-full mb-2 p-2 border" value={password} onChange={e=>setPassword(e.target.value)} placeholder="password" />
-        <button className="w-full bg-blue-600 text-white p-2">Login</button>
-      </form>
-    </div>
-  )
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Email"
+        autoComplete="off"
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="Password"
+        autoComplete="new-password"
+        required
+      />
+      <button type="submit">Login</button>
+      {error && <p>{error}</p>}
+    </form>
+  );
 }
