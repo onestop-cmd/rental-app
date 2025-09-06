@@ -2,32 +2,25 @@ services:
   - type: web
     name: salim-reza-property-management
     env: node
-    region: oregon  # change to your preferred region
+    region: oregon   # change if you prefer another Render region
     branch: main
     autoDeploy: true
-    plan: starter  # free tier, change if needed
+    plan: starter    # free tier plan
     buildCommand: |
       cd client && npm install && npm run build && cd ../server && npm install
     startCommand: cd server && npm start
     envVars:
       - key: MONGO_URI
-        fromDatabase: false
         value: "mongodb+srv://cdssakir_db_user:dataPass123bd@cluster0.qdtmhn7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
       - key: JWT_SECRET
-        fromDatabase: false
         value: "d8F4pT6vQz9xR2sLwE7bH3nYkJ1mV0aZ"
       - key: GOOGLE_DRIVE_ENABLED
-        fromDatabase: false
-        value: false
+        value: "false"
       - key: GOOGLE_DRIVE_CLIENT_ID
-        fromDatabase: false
         value: ""
       - key: GOOGLE_DRIVE_CLIENT_SECRET
-        fromDatabase: false
         value: ""
       - key: GOOGLE_DRIVE_REDIRECT_URI
-        fromDatabase: false
         value: ""
       - key: GOOGLE_DRIVE_REFRESH_TOKEN
-        fromDatabase: false
         value: ""
