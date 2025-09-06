@@ -1,21 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api';
-export default function Dashboard(){
-  const [data,setData]=useState({});
-  useEffect(()=>{ api.get('/api/dashboard').then(r=>setData(r.data)).catch(console.error); },[]);
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { API_URL, getAuthHeaders } from '../utils/api';
+
+export default function Dashboard() {
+  const [data, setData] = useState(null);
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/dashboard`, {
+          headers: getAuthHeaders(),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || 'Failed to fetch dashboard');
+        setData(result);
+      } catch (err) {
+        console.error(err);
+        logout();
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="p-4 bg-white rounded shadow">Properties<br/><strong>{data.properties||0}</strong></div>
-        <div className="p-4 bg-white rounded shadow">Tenants<br/><strong>{data.tenants||0}</strong></div>
-        <div className="p-4 bg-white rounded shadow">Expenses<br/><strong>{data.expenses||0}</strong></div>
-        <div className="p-4 bg-white rounded shadow">Deposits<br/><strong>{data.deposits||0}</strong></div>
-      </div>
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Upcoming Rent Due</h3>
-        <p>Use Rent Schedule page to view and mark paid/unpaid.</p>
-      </div>
+      <h1>Dashboard</h1>
+      <button onClick={logout}>Logout</button>
+      {data ? (
+        <>
+          <p>Total Properties: {data.totalProperties}</p>
+          <p>Total Tenants: {data.totalTenants}</p>
+          <p>Total Expenses: ${data.totalExpenses}</p>
+          <p>Total Deposits: ${data.totalDeposits}</p>
+        </>
+      ) : (
+        <p>Loading...</p>
+      )}
     </div>
-  )
+  );
 }
