@@ -1,18 +1,21 @@
-const express = require('express');
+const express = require("express");
+const Expense = require("../models/Expense");
+const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
-const Expense = require('../models/Expense');
-const auth = require('../middleware/auth');
 
-router.get('/', auth, async (req,res)=> {
-  const list = await Expense.find().populate('property createdBy');
-  res.json(list);
+router.post("/", authMiddleware, async (req, res) => {
+  try {
+    const expense = new Expense(req.body);
+    await expense.save();
+    res.json(expense);
+  } catch {
+    res.status(500).json({ message: "Error creating expense" });
+  }
 });
 
-router.post('/', auth, async (req,res)=> {
-  const e = new Expense({...req.body, createdBy: req.user._id});
-  await e.save();
-  console.log('Expense', e._id);
-  res.json(e);
+router.get("/", authMiddleware, async (req, res) => {
+  const expenses = await Expense.find().populate("property");
+  res.json(expenses);
 });
 
 module.exports = router;
