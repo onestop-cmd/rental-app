@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
-const BankDepositSchema = new mongoose.Schema({
-  property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
-  depositedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  depositDate: Date,
-  depositMonth: String,
+const mongoose = require("mongoose");
+
+const bankDepositSchema = new mongoose.Schema({
+  property: { type: mongoose.Schema.Types.ObjectId, ref: "Property" },
+  depositedBy: String,
   amount: Number,
-  description: String
-}, { timestamps: true });
-module.exports = mongoose.model('BankDeposit', BankDepositSchema);
+  date: { type: Date, default: Date.now },
+  month: String, // YYYY-MM (for reconciliation)
+});
+
+module.exports = mongoose.model("BankDeposit", bankDepositSchema);
