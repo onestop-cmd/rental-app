@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
-const PropertySchema = new mongoose.Schema({
-  builderName: String,
-  buildingNumber: String,
-  unitNumber: String,
-  address: String
-}, { timestamps: true });
-module.exports = mongoose.model('Property', PropertySchema);
+const mongoose = require("mongoose");
+
+const propertySchema = new mongoose.Schema({
+  name: String,
+  address: String,
+});
+
+module.exports = mongoose.model("Property", propertySchema);
