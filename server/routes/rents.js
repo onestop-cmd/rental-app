@@ -1,35 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const RentSchedule = require('../models/RentSchedule');
-const Tenant = require('../models/Tenant');
-const auth = require('../middleware/auth');
-const multer = require('multer');
-const upload = multer().single('receipt');
-const { uploadBuffer } = require('../utils/googleDrive');
+const authMiddleware = require("../middleware/authMiddleware");
+const Tenant = require("../models/Tenant");
 
-router.get('/', auth, async (req,res)=> {
-  const r = await RentSchedule.find().populate('tenant');
-  res.json(r);
-});
+router.post("/:tenantId/mark-paid", authMiddleware, async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const tenant = await Tenant.findById(tenantId).populate("property");
+    if (!tenant) return res.status(404).json({ message: "Tenant not found" });
 
-router.post('/', auth, async (req,res)=> {
-  const r = new RentSchedule(req.body);
-  await r.save();
-  console.log('Rent schedule created', r._id);
-  res.json(r);
-});
+    const overduePayment = tenant.payments.find((p) => p.status === "due");
+    if (!overduePayment) return res.status(400).json({ message: "No overdue payments" });
 
-router.put('/:id/mark-paid', auth, upload, async (req,res)=> {
-  const rent = await RentSchedule.findById(req.params.id);
-  if(!rent) return res.status(404).send('Not found');
-  rent.status = 'paid';
-  if(req.file){
-    const uploaded = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
-    rent.receipt = { url: uploaded ? uploaded.id : 'local-skip', uploadedAt: new Date() };
+    overduePayment.status = "paid";
+    overduePayment.paidAt = new Date();
+    await tenant.save();
+
+    res.json({ message: "Payment marked as paid", tenant });
+  } catch {
+    res.status(500).json({ message: "Error marking payment" });
   }
-  await rent.save();
-  console.log('Marked paid', rent._id);
-  res.json(rent);
 });
 
 module.exports = router;
