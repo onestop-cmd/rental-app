@@ -1,24 +1,75 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api';
-export default function Expenses(){
-  const [list,setList]=useState([]); const [form,setForm]=useState({});
-  useEffect(()=>{ api.get('/api/expenses').then(r=>setList(r.data)).catch(console.error); },[]);
-  const add = async e => {
+import { useEffect, useState } from "react";
+import { API_URL, getAuthHeaders } from "../utils/api";
+
+export default function Expenses() {
+  const [expenses, setExpenses] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [form, setForm] = useState({ description: "", amount: "", property: "" });
+
+  const fetchExpenses = async () => {
+    const res = await fetch(`${API_URL}/api/expenses`, { headers: getAuthHeaders() });
+    const data = await res.json();
+    setExpenses(data);
+  };
+
+  const fetchProperties = async () => {
+    const res = await fetch(`${API_URL}/api/properties`, { headers: getAuthHeaders() });
+    const data = await res.json();
+    setProperties(data);
+  };
+
+  const addExpense = async (e) => {
     e.preventDefault();
-    await api.post('/api/expenses', form);
-    const r = await api.get('/api/expenses'); setList(r.data);
-  }
+    await fetch(`${API_URL}/api/expenses`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(form),
+    });
+    setForm({ description: "", amount: "", property: "" });
+    fetchExpenses();
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+    fetchProperties();
+  }, []);
+
   return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Expenses</h1>
-      <form onSubmit={add} className="mb-4 grid grid-cols-3 gap-2">
-        <input onChange={e=>setForm({...form, description:e.target.value})} placeholder="Description" className="p-2 border" />
-        <input onChange={e=>setForm({...form, amount:parseFloat(e.target.value)||0})} placeholder="Amount" className="p-2 border" />
-        <button className="col-span-3 mt-2 bg-blue-600 text-white p-2">Add Expense</button>
+    <div style={{ padding: "20px" }}>
+      <h1>Expenses</h1>
+      <form onSubmit={addExpense} style={{ marginBottom: "20px" }}>
+        <input
+          placeholder="Description"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+        <input
+          type="number"
+          placeholder="Amount"
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+        />
+        <select
+          value={form.property}
+          onChange={(e) => setForm({ ...form, property: e.target.value })}
+        >
+          <option value="">Select Property</option>
+          {properties.map((p) => (
+            <option key={p._id} value={p._id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit">Add Expense</button>
       </form>
-      <div className="grid gap-2">
-        {list.map(x=> <div key={x._id} className="p-3 bg-white rounded shadow">{x.description} — ${x.amount}</div>)}
-      </div>
+
+      <ul>
+        {expenses.map((e) => (
+          <li key={e._id}>
+            {e.description} - ${e.amount} ({e.property?.name || "N/A"})
+          </li>
+        ))}
+      </ul>
     </div>
-  )
+  );
 }
