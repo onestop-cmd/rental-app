@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, Navigate } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
@@ -29,6 +29,14 @@ function Navbar() {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 export default function App() {
   return (
     <>
@@ -37,17 +45,19 @@ export default function App() {
         <Route
           path="/*"
           element={
-            <div>
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/properties" element={<Properties />} />
-                <Route path="/tenants" element={<Tenants />} />
-                <Route path="/expenses" element={<Expenses />} />
-                <Route path="/deposits" element={<Deposits />} />
-                <Route path="*" element={<div>Page Not Found</div>} />
-              </Routes>
-            </div>
+            <ProtectedRoute>
+              <div>
+                <Navbar />
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/tenants" element={<Tenants />} />
+                  <Route path="/expenses" element={<Expenses />} />
+                  <Route path="/deposits" element={<Deposits />} />
+                  <Route path="*" element={<div>Page Not Found</div>} />
+                </Routes>
+              </div>
+            </ProtectedRoute>
           }
         />
       </Routes>
