@@ -1,124 +1,80 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { API_URL, getAuthHeaders } from "../utils/api";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { API_URL, getAuthHeaders } from '../utils/api';
 
 export default function Dashboard() {
-  const [data, setData] = useState({
-    properties: [],
-    tenants: [],
-    expenses: [],
-    rents: [],
-  });
+  const [data, setData] = useState(null);
   const navigate = useNavigate();
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/dashboard`, {
+        headers: getAuthHeaders(),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Failed to fetch dashboard');
+      setData(result);
+    } catch (err) {
+      console.error(err);
+      logout();
+    }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/dashboard`, {
-          headers: getAuthHeaders(),
-        });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.message || "Failed to fetch dashboard");
-        setData(result);
-      } catch (err) {
-        console.error(err);
-        logout();
-      }
-    };
     fetchData();
   }, []);
 
+  if (!data) return <p>Loading...</p>;
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-md p-6">
-        <h2 className="text-lg font-bold mb-6">Rental Property Management</h2>
-        <nav className="space-y-4">
-          <a href="/" className="block text-blue-600 font-medium">
-            Dashboard
-          </a>
-          <a href="/properties" className="block text-gray-600 hover:text-blue-600">
-            Properties
-          </a>
-          <a href="/tenants" className="block text-gray-600 hover:text-blue-600">
-            Tenants
-          </a>
-          <a href="/rents" className="block text-gray-600 hover:text-blue-600">
-            Rent Schedule
-          </a>
-          <a href="/expenses" className="block text-gray-600 hover:text-blue-600">
-            Expenses
-          </a>
-        </nav>
-      </aside>
+    <div style={{ padding: '20px' }}>
+      <h1>Dashboard</h1>
+      <button onClick={logout} style={{ marginBottom: '20px' }}>Logout</button>
 
-      {/* Main content */}
-      <main className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <button
-            onClick={logout}
-            className="text-red-600 font-medium hover:underline"
-          >
-            SignOut
-          </button>
-        </div>
+      <section>
+        <h2>Overview</h2>
+        <p>Total Properties: {data.totalProperties}</p>
+        <p>Total Tenants: {data.totalTenants}</p>
+        <p>Total Expenses: {data.totalExpenses}</p>
+        <p>Total Deposits: {data.totalDeposits}</p>
+        <h3>Monthly Totals</h3>
+        <p>Rent Collected: ${data.monthlyTotals.rentCollected}</p>
+        <p>Expenses: ${data.monthlyTotals.monthlyExpenses}</p>
+        <p>Deposits: ${data.monthlyTotals.monthlyDeposits}</p>
+      </section>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-500">Properties</p>
-            <p className="text-2xl font-bold">{data.properties?.length || 0}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-500">Tenants</p>
-            <p className="text-2xl font-bold">{data.tenants?.length || 0}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-500">Expenses</p>
-            <p className="text-2xl font-bold">
-              ${data.expenses?.reduce((sum, e) => sum + e.amount, 0) || 0}
-            </p>
-          </div>
-        </div>
-
-        {/* Upcoming Rent */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4">Upcoming Rent Due</h2>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="pb-2">Tenant</th>
-                <th className="pb-2">Month</th>
-                <th className="pb-2">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.rents && data.rents.length > 0 ? (
-                data.rents.map((r) => (
-                  <tr key={r._id} className="border-b">
-                    <td className="py-2">{r.tenant?.name || "Unknown"}</td>
-                    <td className="py-2">{r.month}</td>
-                    <td className="py-2">${r.amount}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3" className="text-gray-500 py-4 text-center">
-                    No upcoming rent found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </main>
+      <section style={{ marginTop: '30px' }}>
+        <h2>Overdue Tenants</h2>
+        {data.overdueTenants.length > 0 ? (
+          <ul>
+            {data.overdueTenants.map((t) => (
+              <li key={t._id} style={{ marginBottom: '10px' }}>
+                {t.name} – {t.propertyName} – Rent Due: ${t.monthlyRent} for {t.overdueMonths.join(', ')}
+                <button
+                  onClick={async () => {
+                    await fetch(`${API_URL}/api/rents/${t._id}/mark-paid`, {
+                      method: "POST",
+                      headers: getAuthHeaders(),
+                    });
+                    fetchData();
+                  }}
+                  style={{ marginLeft: '10px', padding: '4px 8px', backgroundColor: 'green', color: 'white' }}
+                >
+                  Mark Paid
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No overdue tenants 🎉</p>
+        )}
+      </section>
     </div>
   );
 }
