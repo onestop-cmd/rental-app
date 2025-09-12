@@ -1,8 +1,10 @@
-const mongoose = require('mongoose');
-const ExpenseSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+
+const expenseSchema = new mongoose.Schema({
+  property: { type: mongoose.Schema.Types.ObjectId, ref: "Property" },
   description: String,
   amount: Number,
-  property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
-module.exports = mongoose.model('Expense', ExpenseSchema);
+  date: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("Expense", expenseSchema);
