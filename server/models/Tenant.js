@@ -1,10 +1,18 @@
-const mongoose = require('mongoose');
-const TenantSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+
+const paymentSchema = new mongoose.Schema({
+  month: String, // YYYY-MM
+  amount: Number,
+  status: { type: String, enum: ["due", "paid"], default: "due" },
+  paidAt: Date,
+});
+
+const tenantSchema = new mongoose.Schema({
   name: String,
   email: String,
-  phone: String,
-  property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
-  rent: Number,
-  receipts: [{ url: String, uploadedAt: Date }]
-}, { timestamps: true });
-module.exports = mongoose.model('Tenant', TenantSchema);
+  monthlyRent: Number,
+  property: { type: mongoose.Schema.Types.ObjectId, ref: "Property" },
+  payments: [paymentSchema],
+});
+
+module.exports = mongoose.model("Tenant", tenantSchema);
