@@ -1,71 +1,67 @@
-const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
-const Property = require('../models/Property');
-const Tenant = require('../models/Tenant');
-const Expense = require('../models/Expense');
-const BankDeposit = require('../models/BankDeposit');
+import express from "express";
+import Rent from "../models/Rent.js";
+import Expense from "../models/Expense.js";
+import Deposit from "../models/Deposit.js";
 
-// Dashboard summary
-router.get('/', authMiddleware, async (req, res) => {
+const router = express.Router();
+
+function getMonthRange(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return { start, end };
+}
+
+router.get("/stats", async (req, res) => {
   try {
-    const [properties, tenants, expenses, deposits] = await Promise.all([
-      Property.find(),
-      Tenant.find().populate('property'),
-      Expense.find(),
-      BankDeposit.find(),
+    const now = new Date();
+    const { start: startCurrent, end: endCurrent } = getMonthRange(now);
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const { start: startPrev, end: endPrev } = getMonthRange(prevMonth);
+
+    // Current month
+    const rentCurrent = await Rent.aggregate([
+      { $match: { paidDate: { $gte: startCurrent, $lte: endCurrent } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const expensesCurrent = await Expense.aggregate([
+      { $match: { date: { $gte: startCurrent, $lte: endCurrent } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const depositsCurrent = await Deposit.aggregate([
+      { $match: { date: { $gte: startCurrent, $lte: endCurrent } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
 
-    // Overdue tenants
-    const overdueTenants = tenants
-      .map((t) => {
-        const overdue = t.payments.filter((p) => p.status === "due");
-        if (overdue.length > 0) {
-          return {
-            _id: t._id,
-            name: t.name,
-            monthlyRent: t.monthlyRent,
-            propertyName: t.property?.builderName || "Unknown",
-            overdueMonths: overdue.map((p) => p.month),
-          };
-        }
-        return null;
-      })
-      .filter(Boolean);
-
-    // Monthly totals
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const rentCollected = tenants.reduce((sum, t) => {
-      return sum + t.payments
-        .filter((p) => p.month === currentMonth && p.status === "paid")
-        .reduce((s, p) => s + p.amount, 0);
-    }, 0);
-
-    const monthlyExpenses = expenses
-      .filter((e) => e.date.toISOString().startsWith(currentMonth))
-      .reduce((s, e) => s + e.amount, 0);
-
-    const monthlyDeposits = deposits
-      .filter((d) => d.date.toISOString().startsWith(currentMonth))
-      .reduce((s, d) => s + d.amount, 0);
+    // Previous month
+    const rentPrev = await Rent.aggregate([
+      { $match: { paidDate: { $gte: startPrev, $lte: endPrev } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const expensesPrev = await Expense.aggregate([
+      { $match: { date: { $gte: startPrev, $lte: endPrev } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const depositsPrev = await Deposit.aggregate([
+      { $match: { date: { $gte: startPrev, $lte: endPrev } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
 
     res.json({
-      totalProperties: properties.length,
-      totalTenants: tenants.length,
-      totalExpenses: expenses.length,
-      totalDeposits: deposits.length,
-      overdueCount: overdueTenants.length,
-      overdueTenants,
-      monthlyTotals: {
-        rentCollected,
-        monthlyExpenses,
-        monthlyDeposits,
+      currentMonth: {
+        rent: rentCurrent[0]?.total || 0,
+        expenses: expensesCurrent[0]?.total || 0,
+        deposits: depositsCurrent[0]?.total || 0,
+      },
+      previousMonth: {
+        rent: rentPrev[0]?.total || 0,
+        expenses: expensesPrev[0]?.total || 0,
+        deposits: depositsPrev[0]?.total || 0,
       },
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error fetching dashboard" });
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
   }
 });
 
-module.exports = router;
+export default router;
