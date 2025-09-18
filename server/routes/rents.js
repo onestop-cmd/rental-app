@@ -1,25 +1,22 @@
-const express = require("express");
+import express from "express";
+import Rent from "../models/Rent.js";
+
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
-const Tenant = require("../models/Tenant");
 
-router.post("/:tenantId/mark-paid", authMiddleware, async (req, res) => {
+// PUT mark rent as paid
+router.put("/:id/mark-paid", async (req, res) => {
   try {
-    const { tenantId } = req.params;
-    const tenant = await Tenant.findById(tenantId).populate("property");
-    if (!tenant) return res.status(404).json({ message: "Tenant not found" });
+    const rent = await Rent.findById(req.params.id);
+    if (!rent) return res.status(404).json({ message: "Rent not found" });
 
-    const overduePayment = tenant.payments.find((p) => p.status === "due");
-    if (!overduePayment) return res.status(400).json({ message: "No overdue payments" });
+    rent.paid = true;
+    rent.paidDate = new Date();
+    await rent.save();
 
-    overduePayment.status = "paid";
-    overduePayment.paidAt = new Date();
-    await tenant.save();
-
-    res.json({ message: "Payment marked as paid", tenant });
-  } catch {
-    res.status(500).json({ message: "Error marking payment" });
+    res.json({ message: "Rent marked as paid", rent });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update rent" });
   }
 });
 
-module.exports = router;
+export default router;
