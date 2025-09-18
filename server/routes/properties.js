@@ -11,6 +11,7 @@ const router = express.Router();
 
 /**
  * GET all properties
+ * Accessible by all logged-in users
  */
 router.get("/", authMiddleware, async (req, res) => {
   try {
@@ -24,6 +25,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
 /**
  * POST create a new property
+ * Accessible by all logged-in users
  */
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -38,7 +40,8 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 /**
- * DELETE property (admin only)
+ * DELETE property
+ * Admin only
  */
 router.delete("/:id", authMiddleware, adminMiddleware, async (req, res) => {
   try {
@@ -53,6 +56,7 @@ router.delete("/:id", authMiddleware, adminMiddleware, async (req, res) => {
 
 /**
  * GET property details (units, tenants, rents, expenses, deposits)
+ * Accessible by all logged-in users
  */
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
@@ -76,6 +80,26 @@ router.get("/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Error fetching property details:", err);
     res.status(500).json({ message: "Error fetching property details" });
+  }
+});
+
+/**
+ * POST add a unit to a property
+ * Accessible by all logged-in users
+ */
+router.post("/:id/units", authMiddleware, async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ message: "Property not found" });
+
+    const { unitName } = req.body;
+    property.units.push({ name: unitName });
+    await property.save();
+
+    res.status(201).json(property);
+  } catch (err) {
+    console.error("Error adding unit:", err);
+    res.status(500).json({ message: "Error adding unit" });
   }
 });
 
