@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
-// Routes (all must default-export a router)
+// Routes (all default-export routers)
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import tenantRoutes from "./routes/tenants.js";
@@ -21,7 +21,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Mount routes
+// ✅ Mount routers (never mount middleware files directly)
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/tenants", tenantRoutes);
