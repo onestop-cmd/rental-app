@@ -51,6 +51,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/properties" element={<Properties />} />
+                  <Route path="/properties/:id" element={<PropertyDetails />} />
                   <Route path="/tenants" element={<Tenants />} />
                   <Route path="/expenses" element={<Expenses />} />
                   <Route path="/deposits" element={<Deposits />} />
