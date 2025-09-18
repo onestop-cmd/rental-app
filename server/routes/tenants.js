@@ -1,22 +1,33 @@
-const express = require("express");
-const Tenant = require("../models/Tenant");
-const authMiddleware = require("../middleware/authMiddleware");
+import express from "express";
+import Tenant from "../models/Tenant.js";
+import Rent from "../models/Rent.js";
+
 const router = express.Router();
 
-router.post("/", authMiddleware, async (req, res) => {
+// GET overdue tenants
+router.get("/overdue", async (req, res) => {
   try {
-    const { name, email, monthlyRent, property } = req.body;
-    const tenant = new Tenant({ name, email, monthlyRent, property, payments: [] });
-    await tenant.save();
-    res.json(tenant);
-  } catch {
-    res.status(500).json({ message: "Error creating tenant" });
+    const today = new Date();
+
+    // Find unpaid rents due before today
+    const overdueRents = await Rent.find({
+      dueDate: { $lt: today },
+      paid: false,
+    }).populate("tenant property");
+
+    const tenants = overdueRents.map((r) => ({
+      _id: r.tenant._id,
+      name: r.tenant.name,
+      unit: r.tenant.unit,
+      property: r.property?.builderName || "Unknown",
+      rentDue: r.amount,
+      rentId: r._id,
+    }));
+
+    res.json(tenants);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch overdue tenants" });
   }
 });
 
-router.get("/", authMiddleware, async (req, res) => {
-  const tenants = await Tenant.find().populate("property");
-  res.json(tenants);
-});
-
-module.exports = router;
+export default router;
